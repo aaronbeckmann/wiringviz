@@ -1,0 +1,51 @@
+{
+  "name": "wiring-viz",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "description": "Wiring Viz — wiring harness visualizer",
+  "author": "Wiring Viz",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "app": "npm run build && set ELECTRON_RUN_AS_NODE=&& electron .",
+    "app:dist": "npm run build && electron-builder --win portable \"-c.directories.output=%LOCALAPPDATA%\\WiringViz-release\""
+  },
+  "dependencies": {
+    "@xyflow/react": "^12.11.2",
+    "html-to-image": "^1.11.13",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
+    "marked": "^18.0.6",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "electron": "^38.4.0",
+    "electron-builder": "^26.0.12",
+    "oxlint": "^1.71.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.1.1"
+  },
+  "build": {
+    "appId": "app.wiringviz.desktop",
+    "productName": "Wiring Viz",
+    "files": [
+      "dist/**",
+      "electron/**"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": "portable"
+    }
+  }
+}
