@@ -2,16 +2,27 @@ import type { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { marked, type Token, type Tokens } from 'marked';
 
-/** Remove inline markdown markers for plain-text PDF output. */
-const strip = (s: string): string =>
-  s
+/**
+ * Remove inline markdown markers for plain-text PDF output.
+ * Code spans are extracted first so emphasis regexes can't mangle
+ * underscores/asterisks inside them (e.g. `wire_gauge_22`, `a*b`).
+ */
+export const strip = (s: string): string => {
+  const codes: string[] = [];
+  let out = s.replace(/`([^`]*)`/g, (_m, c: string) => {
+    codes.push(c);
+    return `§CODE${codes.length - 1}§`;
+  });
+  out = out
     .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/(\*\*|__)(.*?)\1/g, '$2')
-    .replace(/(\*|_)(.*?)\1/g, '$2')
-    .replace(/~~(.*?)~~/g, '$1')
-    .replace(/`([^`]*)`/g, '$1')
-    .trim();
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/(^|\W)_([^_]+)_(?=\W|$)/g, '$1$2')
+    .replace(/~~(.*?)~~/g, '$1');
+  out = out.replace(/§CODE(\d+)§/g, (_m, i: string) => codes[Number(i)] ?? '');
+  return out.trim();
+};
 
 /**
  * Typeset markdown into the PDF using text primitives (no rasterization):

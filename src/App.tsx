@@ -12,7 +12,6 @@ import {
   useNodesState,
   useEdgesState,
   useReactFlow,
-  getNodesBounds,
   getViewportForBounds,
   type Connection,
   type Edge,
@@ -372,22 +371,27 @@ function HarnessApp() {
     hoverTimer.current = window.setTimeout(() => setHoveredEdgeId(null), 3000);
   }, []);
 
+  /** Absolute flow position of a handle's center. */
+  const handleCoord = useCallback(
+    (nodeId: string, handleId?: string | null): XY | null => {
+      const n = rf.getInternalNode(nodeId);
+      if (!n) return null;
+      const all = [...(n.internals.handleBounds?.source ?? []), ...(n.internals.handleBounds?.target ?? [])];
+      const h = all.find((x) => x.id === handleId) ?? all[0];
+      if (!h) return null;
+      return {
+        x: n.internals.positionAbsolute.x + h.x + h.width / 2,
+        y: n.internals.positionAbsolute.y + h.y + h.height / 2,
+      };
+    },
+    [rf],
+  );
+
   // ---------- layout points: double-click a wire to add a bend ----------
   const onEdgeDoubleClick = useCallback(
     (event: React.MouseEvent, edge: Edge) => {
       event.stopPropagation();
       const p = rf.screenToFlowPosition({ x: event.clientX, y: event.clientY });
-      const handleCoord = (nodeId: string, handleId?: string | null): XY | null => {
-        const n = rf.getInternalNode(nodeId);
-        if (!n) return null;
-        const all = [...(n.internals.handleBounds?.source ?? []), ...(n.internals.handleBounds?.target ?? [])];
-        const h = all.find((x) => x.id === handleId) ?? all[0];
-        if (!h) return null;
-        return {
-          x: n.internals.positionAbsolute.x + h.x + h.width / 2,
-          y: n.internals.positionAbsolute.y + h.y + h.height / 2,
-        };
-      };
       const a = handleCoord(edge.source, edge.sourceHandle);
       const b = handleCoord(edge.target, edge.targetHandle);
       if (!a || !b) return;
@@ -410,7 +414,7 @@ function HarnessApp() {
         }),
       );
     },
-    [rf, setEdges],
+    [rf, setEdges, handleCoord],
   );
 
   // ---------- keyboard: R rotates, V = drag mode, W = wire mode ----------
@@ -609,16 +613,62 @@ function HarnessApp() {
     [loadProject],
   );
 
-  /** Snapshot the schematic as PNG. Layout helpers (bend diamonds) are excluded. */
+  /**
+   * Snapshot the schematic as PNG, framed to the actual content: absolute node
+   * rects plus wire bends and dragged labels, with uniform padding. Layout
+   * helpers (bend diamonds) are excluded from the image.
+   */
   const renderSchematicPng = useCallback(async () => {
     const flowNodes = rf.getNodes();
     if (flowNodes.length === 0) return null;
     const el = document.querySelector<HTMLElement>('.react-flow__viewport');
     if (!el) return null;
-    const bounds = getNodesBounds(flowNodes);
-    const width = Math.min(3200, Math.ceil(bounds.width) + 120);
-    const height = Math.min(3200, Math.ceil(bounds.height) + 120);
-    const vp = getViewportForBounds(bounds, width, height, 0.3, 2, 0.07);
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    const grow = (x: number, y: number) => {
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    };
+    // nodes: absolute positions (children of boards store relative ones)
+    for (const n of flowNodes) {
+      const internal = rf.getInternalNode(n.id);
+      if (!internal) continue;
+      const { x, y } = internal.internals.positionAbsolute;
+      const w = n.measured?.width ?? n.width ?? 0;
+      const h = n.measured?.height ?? n.height ?? 0;
+      grow(x, y);
+      grow(x + w, y + h);
+    }
+    // edges: layout points and dragged labels can stick out beyond nodes
+    for (const e of rf.getEdges()) {
+      const d = e.data as WireData | undefined;
+      for (const p of d?.points ?? []) {
+        grow(p.x - 10, p.y - 10);
+        grow(p.x + 10, p.y + 10);
+      }
+      if (d?.labelOffset) {
+        const a = handleCoord(e.source, e.sourceHandle);
+        const b = handleCoord(e.target, e.targetHandle);
+        if (a && b) {
+          const lx = (a.x + b.x) / 2 + d.labelOffset.x;
+          const ly = (a.y + b.y) / 2 - 16 + d.labelOffset.y;
+          grow(lx - 70, ly - 14);
+          grow(lx + 70, ly + 14);
+        }
+      }
+    }
+    if (!Number.isFinite(minX)) return null;
+
+    const pad = 48;
+    const bounds = { x: minX - pad, y: minY - pad, width: maxX - minX + pad * 2, height: maxY - minY + pad * 2 };
+    const width = Math.min(3200, Math.ceil(bounds.width));
+    const height = Math.min(3200, Math.ceil(bounds.height));
+    const vp = getViewportForBounds(bounds, width, height, 0.3, 2, 0);
     const dataUrl = await toPng(el, {
       backgroundColor: '#f4f5f8',
       width,
@@ -632,7 +682,7 @@ function HarnessApp() {
       },
     });
     return { dataUrl, width, height };
-  }, [rf]);
+  }, [rf, handleCoord]);
 
   const onExportPng = useCallback(async () => {
     try {
