@@ -23,6 +23,12 @@ The full wiring table — one row per wire:
 
 Part library + BOM. See the *Parts & BOM* chapter.
 
+## Assembly
+
+A Markdown editor with live preview for writing the harness's **assembly
+instructions** — cutting lists, crimping steps, checklists. The text is part of
+the project: it autosaves and travels with JSON export/import.
+
 ## Manual
 
 You're reading it.

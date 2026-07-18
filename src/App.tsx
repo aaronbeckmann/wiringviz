@@ -44,6 +44,7 @@ import Palette, { type PaletteItem } from './components/Palette';
 import Inspector from './components/Inspector';
 import ConnectionsTable from './components/ConnectionsTable';
 import PartsView from './components/PartsView';
+import AssemblyView from './components/AssemblyView';
 import ManualView from './components/ManualView';
 import TitleBar from './components/TitleBar';
 import Toolbar, { type ViewMode } from './components/Toolbar';
@@ -124,6 +125,7 @@ function normalizeProject(p: Project): Project {
     ...p,
     cables: (p.cables ?? []).map((c) => ({ ...c, kind: c.kind ?? 'cable' })),
     parts: p.parts ?? [],
+    assembly: p.assembly ?? '',
     nodes: sortContainersFirst(nodes),
     edges,
   };
@@ -154,11 +156,12 @@ function HarnessApp() {
   const [projectName, setProjectName] = useState(initial.current.name || 'Untitled harness');
   const [cables, setCables] = useState<Cable[]>(initial.current.cables ?? []);
   const [parts, setParts] = useState<Part[]>(initial.current.parts ?? []);
+  const [assembly, setAssembly] = useState<string>(initial.current.assembly ?? '');
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initial.current.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(initial.current.edges);
   const [view, setView] = useState<ViewMode>(() => {
     const v = new URLSearchParams(window.location.search).get('view');
-    return v === 'connections' || v === 'parts' || v === 'manual' ? v : 'schematic';
+    return v === 'connections' || v === 'parts' || v === 'manual' || v === 'assembly' ? v : 'schematic';
   });
   const [selected, setSelected] = useState<{ nodeId: string | null; edgeId: string | null }>({
     nodeId: null,
@@ -182,7 +185,7 @@ function HarnessApp() {
   // ---------- autosave ----------
   useEffect(() => {
     const t = setTimeout(() => {
-      const project: Project = { version: 1, name: projectName, nodes, edges, cables, parts };
+      const project: Project = { version: 1, name: projectName, nodes, edges, cables, parts, assembly };
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(project));
       } catch {
@@ -190,7 +193,7 @@ function HarnessApp() {
       }
     }, 400);
     return () => clearTimeout(t);
-  }, [projectName, nodes, edges, cables, parts]);
+  }, [projectName, nodes, edges, cables, parts, assembly]);
 
   // ---------- wiring ----------
   const onConnect = useCallback(
@@ -567,6 +570,7 @@ function HarnessApp() {
       setProjectName(p.name || 'Untitled harness');
       setCables(p.cables);
       setParts(p.parts);
+      setAssembly(p.assembly ?? '');
       setNodes(p.nodes);
       setEdges(p.edges);
       setSelected({ nodeId: null, edgeId: null });
@@ -577,7 +581,7 @@ function HarnessApp() {
 
   const onNew = useCallback(() => {
     if (!window.confirm('Start a new empty project? The current project will be replaced.')) return;
-    loadProject({ version: 1, name: 'Untitled harness', nodes: [], edges: [], cables: [], parts: [] });
+    loadProject({ version: 1, name: 'Untitled harness', nodes: [], edges: [], cables: [], parts: [], assembly: '' });
   }, [loadProject]);
 
   const onDemo = useCallback(() => {
@@ -586,10 +590,10 @@ function HarnessApp() {
   }, [loadProject]);
 
   const onExportJson = useCallback(() => {
-    const project: Project = { version: 1, name: projectName, nodes, edges, cables, parts };
+    const project: Project = { version: 1, name: projectName, nodes, edges, cables, parts, assembly };
     const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
     downloadUrl(URL.createObjectURL(blob), `${safeFileName(projectName)}.harness.json`);
-  }, [projectName, nodes, edges, cables, parts]);
+  }, [projectName, nodes, edges, cables, parts, assembly]);
 
   const onImport = useCallback(
     async (file: File) => {
@@ -700,7 +704,7 @@ function HarnessApp() {
       const bom = computeBom(nodes, edges, cables);
       let total = 0;
       const bomRows = parts.map((p) => {
-        const qty = bom.get(p.id) ?? 0;
+        const qty = (bom.get(p.id) ?? 0) + (p.manualQty ?? 0);
         const ext = qty * (p.cost ?? 0);
         total += ext;
         return [
@@ -861,6 +865,7 @@ function HarnessApp() {
               onDeletePart={deletePart}
             />
           )}
+          {view === 'assembly' && <AssemblyView value={assembly} onChange={setAssembly} />}
           {view === 'manual' && <ManualView />}
         </div>
         <Inspector

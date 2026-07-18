@@ -27,13 +27,14 @@ export const BOARD_COLORS = ['#4f6ef7', '#0ea5e9', '#10b981', '#f59e0b', '#ef444
 export const CABLE_COLORS = ['#4f6ef7', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
 
 // ---------- Parts library ----------
-export type PartCategory = 'component' | 'accessory' | 'covering' | 'terminal';
+export type PartCategory = 'component' | 'accessory' | 'covering' | 'terminal' | 'other';
 
 export const PART_CATEGORIES: Record<PartCategory, string> = {
   component: 'Component parts',
   accessory: 'Accessories',
   covering: 'Coverings',
   terminal: 'Terminals',
+  other: 'Other parts',
 };
 
 export const PART_TYPES: Record<string, { label: string; category: PartCategory }> = {
@@ -68,13 +69,19 @@ export const COVERING_PART_TYPES = ['heatshrink', 'tape', 'corrugated-tubing', '
 
 export type Part = {
   id: string;
-  type: string; // key of PART_TYPES
+  /** Key of PART_TYPES — or any free-text custom type (categorized as "other"). */
+  type: string;
   mpn: string;
   manufacturer?: string;
   description?: string;
   cost?: number;
   cavities?: number; // connector parts
+  /** Quantity used outside the schematic (spares, zip ties, fuses, labels …). */
+  manualQty?: number;
 };
+
+export const partTypeLabel = (type: string) => PART_TYPES[type]?.label ?? type;
+export const partCategoryOf = (type: string): PartCategory => PART_TYPES[type]?.category ?? 'other';
 
 export type AccessoryRef = { partId: string; qty: number };
 
@@ -177,6 +184,8 @@ export type Project = {
   edges: Edge[];
   cables: Cable[];
   parts: Part[];
+  /** Assembly instructions, written as Markdown in the Assembly view. */
+  assembly?: string;
 };
 
 export const STORAGE_KEY = 'harness-studio-project-v1';

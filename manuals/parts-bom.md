@@ -20,6 +20,12 @@ The **Parts** view manages the project's part library and doubles as the live
 Edit manufacturer, description, cost — and for connectors the **cavity count** —
 directly in the table cells.
 
+### Custom types & BOM-only parts
+
+Pick **Custom type…** in the add form to create parts with any type you like
+(*Zip tie*, *Fuse*, *Label*…). They are grouped under **Other parts** and never
+appear on the schematic — they exist purely for the BOM.
+
 ## Assigning parts
 
 | Assign to | Where |
@@ -33,8 +39,15 @@ directly in the table cells.
 
 ## The BOM
 
-The **Used** column counts every assignment in the design (accessory quantities
-included); **Ext. cost** = used × cost. The bar at the bottom shows the **total
-item count and total cost**, and warns when used parts have no cost yet.
+Every part has two quantities:
+
+- **In design** — counted automatically from schematic assignments (accessory
+  quantities included). Read-only.
+- **Extra** — a number you type yourself: spares, zip ties, fuses, labels, tape…
+  anything the harness needs that isn't drawn.
+
+**Total = In design + Extra**, and **Ext. cost = Total × cost**. The bar at the
+bottom shows the overall item count and total cost, and warns when used parts
+have no cost yet. The PDF export uses the same totals.
 
 Deleting a part removes it from every component that referenced it.

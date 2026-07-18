@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 
-export type ViewMode = 'schematic' | 'connections' | 'parts' | 'manual';
+export type ViewMode = 'schematic' | 'connections' | 'parts' | 'assembly' | 'manual';
 
 export default function Toolbar({ projectName, onRename, view, onViewChange, onNew, onDemo, onImport, onExportJson, onExportPng, onExportPdf }: {
   projectName: string;
@@ -42,6 +42,9 @@ export default function Toolbar({ projectName, onRename, view, onViewChange, onN
         </button>
         <button type="button" className={view === 'parts' ? 'is-active' : ''} onClick={() => onViewChange('parts')}>
           Parts
+        </button>
+        <button type="button" className={view === 'assembly' ? 'is-active' : ''} onClick={() => onViewChange('assembly')}>
+          Assembly
         </button>
         <button type="button" className={view === 'manual' ? 'is-active' : ''} onClick={() => onViewChange('manual')}>
           Manual

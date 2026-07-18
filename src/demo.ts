@@ -201,13 +201,40 @@ export function demoProject(): Project {
     { id: 'p-hs', type: 'heatshrink', mpn: 'HS-3:1-6', description: 'Heatshrink 3:1, Ø6 mm (over D1)', cost: 0.04 },
     { id: 'p-sleeve', type: 'braided-sleeve', mpn: 'PET-6', description: 'Braided sleeve Ø6 mm', cost: 0.2 },
     { id: 'p-ring', type: 'ring-terminal', mpn: 'RNB-1.25-4', description: 'Ring terminal M4, 22–16 AWG', cost: 0.04 },
+    // BOM-only parts (never placed on the schematic)
+    { id: 'p-zip', type: 'Zip tie', mpn: 'ZT-100-NAT', description: 'Cable tie 100 × 2.5 mm', cost: 0.01, manualQty: 8 },
+    { id: 'p-fuse', type: 'Fuse', mpn: 'MINI-2A', description: '2 A mini blade fuse (inline holder)', cost: 0.18, manualQty: 1 },
+    { id: 'p-label', type: 'Label', mpn: 'HT-155-1', description: 'Heatshrink marker label', cost: 0.05, manualQty: 4 },
   ];
+
+  const assembly = `# Assembly — sensor harness
+
+## 1 · Cut & terminate
+1. Cut all wires to the lengths in the **Connections** view (+10 mm service loop).
+2. Crimp GH contacts (SSHL-002T-P0.2) onto the six J1 wires — pull-test each crimp.
+3. Crimp the M4 ring terminal onto the green/yellow CHASSIS wire.
+
+## 2 · Power path
+1. Solder **D1 (SS34)** inline in the BAT+ lead — *cathode band toward J5*.
+2. Cover D1 and both solder joints with 6 mm heatshrink.
+3. Twist the battery leads (~1 turn / 25 mm) and fit the XT30 connectors.
+
+## 3 · Sensor pigtail
+1. Join the two GND branches with the solder sleeve **S1**.
+2. Insert contacts into CN2 (SH1.0) — check designations 1-4 against the schematic.
+3. Slide the PET sleeve over the power jumper and secure with zip ties.
+
+## 4 · Checks
+- [ ] Continuity per net (N1…) — see Connections view
+- [ ] No continuity between +5V and GND
+- [ ] Polarity at BT1: **+ = pin 1**`;
 
   return {
     version: 1,
     name: 'Demo — sensor harness',
     nodes,
     edges,
+    assembly,
     cables: [
       { id: 'c-pwr', name: 'Power jumper', hex: '#f59e0b', kind: 'cable', partId: null, coverings: ['p-sleeve'] },
       { id: 'c-i2c', name: 'Sensor I2C', hex: '#0ea5e9', kind: 'cable', partId: 'p-cable4', coverings: [] },
