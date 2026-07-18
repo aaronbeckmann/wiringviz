@@ -41,7 +41,7 @@ You're reading it.
 | Export JSON | Full project file (`*.harness.json`) — nodes, wires, cables, parts |
 | Import | Restores a JSON export exactly |
 | Export PNG | High-resolution image of the whole schematic (layout helpers hidden) |
-| Export PDF | Full documentation: schematic drawing, connections table and BOM with total cost |
+| Export PDF | Full documentation: schematic drawing, connections table, BOM with total cost, and the assembly instructions (typeset from your Markdown) |
 | New / Load demo | Replace the current project (asks first) |
 
 ## Running Wiring Viz

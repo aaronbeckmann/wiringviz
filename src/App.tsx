@@ -26,6 +26,7 @@ import '@xyflow/react/dist/style.css';
 import './App.css';
 
 import { EdgeHoverContext } from './hoverContext';
+import { renderMarkdownToPdf } from './pdfMarkdown';
 
 import ConnectorNode from './nodes/ConnectorNode';
 import BoardNode from './nodes/BoardNode';
@@ -731,11 +732,19 @@ function HarnessApp() {
         footStyles: { fillColor: [238, 241, 254], textColor: [28, 35, 51], fontStyle: 'bold' },
       });
 
+      // pages 4+: assembly instructions (portrait, typeset from markdown)
+      if (assembly.trim()) {
+        doc.addPage('a4', 'portrait');
+        doc.setFontSize(13);
+        doc.text('Assembly instructions', 40, 42);
+        renderMarkdownToPdf(doc, assembly, { startY: 64, margin: 40 });
+      }
+
       doc.save(`${safeFileName(projectName)}.pdf`);
     } catch {
       window.alert('PDF export failed in this browser. You can still export PNG or JSON.');
     }
-  }, [renderSchematicPng, projectName, nodes, edges, cables, parts]);
+  }, [renderSchematicPng, projectName, nodes, edges, cables, parts, assembly]);
 
   const selectWireFromTable = useCallback(
     (edgeId: string) => {
