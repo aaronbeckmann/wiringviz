@@ -25,7 +25,7 @@ import '@xyflow/react/dist/style.css';
 import './App.css';
 
 import { EdgeHoverContext } from './hoverContext';
-import { renderMarkdownToPdf } from './pdfMarkdown';
+import { renderMarkdownToPdf, toWinAnsi } from './pdfMarkdown';
 
 import ConnectorNode from './nodes/ConnectorNode';
 import BoardNode from './nodes/BoardNode';
@@ -703,7 +703,7 @@ function HarnessApp() {
 
       // page 1: schematic
       doc.setFontSize(16);
-      doc.text(projectName || 'Wiring Viz project', 40, 42);
+      doc.text(toWinAnsi(projectName || 'Wiring Viz project'), 40, 42);
       doc.setFontSize(9);
       doc.setTextColor(120);
       doc.text(
@@ -747,7 +747,7 @@ function HarnessApp() {
             d.partId ? (partById.get(d.partId)?.mpn ?? '') : '',
             cable ? `${cable.name}${cable.kind !== 'cable' ? ` (${CABLE_KINDS[cable.kind]})` : ''}` : '',
             nets.get(e.id) ?? '',
-          ];
+          ].map(toWinAnsi);
         }),
       });
 
@@ -766,7 +766,7 @@ function HarnessApp() {
           String(qty),
           p.cost != null ? p.cost.toFixed(2) : '',
           qty && p.cost != null ? ext.toFixed(2) : '',
-        ];
+        ].map(toWinAnsi);
       });
       doc.addPage();
       doc.setFontSize(13);
